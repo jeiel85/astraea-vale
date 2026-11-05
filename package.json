@@ -1,0 +1,23 @@
+{
+  "name": "astraea-vale",
+  "private": true,
+  "version": "0.1.0",
+  "license": "(MIT AND CC-BY-4.0)",
+  "type": "module",
+  "description": "Astraea Vale(아스트레아 베일) — 별자리 마법 농경 + 콤보 슬라이싱 던전 + 로컬 협동을 담은 브라우저 픽셀 라이프 RPG",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "galmuri": "2.40.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

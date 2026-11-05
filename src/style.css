@@ -1,0 +1,65 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0a1a;
+  color: #fff8ec;
+  font-family: Galmuri11, system-ui, sans-serif;
+}
+#game {
+  display: block;
+  image-rendering: pixelated;
+  cursor: crosshair;
+}
+#loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+}
+.prompt {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #2a2148;
+  border: 2px solid #c8a8ff;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 90vw;
+  font-size: 16px;
+  box-shadow: 0 8px 0 #140e24;
+}
+.prompt input {
+  font: inherit;
+  padding: 8px 10px;
+  background: #1e1834;
+  color: #fff8ec;
+  border: 1px solid #6a5a9a;
+  outline: none;
+}
+.prompt input:focus {
+  border-color: #ffe27a;
+}
+.prompt div:last-child {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.prompt button {
+  font: inherit;
+  padding: 6px 16px;
+  background: #5a4a8a;
+  color: #fff8ec;
+  border: 1px solid #c8a8ff;
+  cursor: pointer;
+}
+.prompt button:hover {
+  background: #7a5ab0;
+}

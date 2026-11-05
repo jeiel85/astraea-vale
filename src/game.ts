@@ -350,15 +350,19 @@ export class Game implements WorldHost {
     const owner = this.world.players[0]?.dev ?? 'kbm';
     this.ui.clear();
     this.world.transition(() => {
-      const sum = advanceDay(this.state, fainted);
-      this.world.restoreForNewDay();
-      if (fainted) for (const p of this.world.players) p.energy = Math.round(p.energy * 0.6);
-      this.world.enter('farm', { tx: 7, ty: 10 });
-      const msg = this.saveNow();
-      audio.sfx('sleep');
-      this.ui.push(new DaySummaryModal(owner, sum, reason ?? null, msg));
-      this.ending = false;
-      if (isFestivalDay(this.state.day)) this.toast('오늘은 별빛 수확제! 저녁 5시에 마을 광장으로.', UI.pink);
+      // 이 안에서 예외가 나도(→ 오류 화면) 하루 마감이 영영 잠기지 않게 플래그는 반드시 푼다.
+      try {
+        const sum = advanceDay(this.state, fainted);
+        this.world.restoreForNewDay();
+        if (fainted) for (const p of this.world.players) p.energy = Math.round(p.energy * 0.6);
+        this.world.enter('farm', { tx: 7, ty: 10 });
+        const msg = this.saveNow();
+        audio.sfx('sleep');
+        this.ui.push(new DaySummaryModal(owner, sum, reason ?? null, msg));
+        if (isFestivalDay(this.state.day)) this.toast('오늘은 별빛 수확제! 저녁 5시에 마을 광장으로.', UI.pink);
+      } finally {
+        this.ending = false;
+      }
     }, true);
   }
 

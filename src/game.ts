@@ -140,6 +140,7 @@ export class Game implements WorldHost {
       this.crash = null;
     } else if (toTitle) {
       this.crash = null;
+      this.ending = false;
       this.ui.clear();
       this.mode = 'title';
       this.input.kb2Active = false;
@@ -166,6 +167,8 @@ export class Game implements WorldHost {
   }
 
   private beginPlay(s: GameState, dev: DeviceId): void {
+    // 이전 세션이 하루 마감 도중 버려졌어도(오류 화면 → 타이틀) 새 세션은 깨끗하게 시작한다.
+    this.ending = false;
     this.state = s;
     this.rng = new Rng(1);
     this.rng.state = s.rngState;

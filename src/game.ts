@@ -15,7 +15,7 @@ import { buyAnimal } from './sim/livestock';
 import { loadFrom, saveTo } from './sim/save';
 import { canGift, danceAtFestival, giveGift, hearts, talk } from './sim/social';
 import { newGame, SWORD_NAMES, type GameState } from './sim/state';
-import { bar, keyHint, panel, text, UI, type Ctx } from './ui/draw';
+import { bar, keyHint, panel, text, UI, wrap, type Ctx } from './ui/draw';
 import { drawHud, type Toast } from './ui/hud';
 import { josa } from './ui/josa';
 import { LookbookModal } from './ui/lookbook';
@@ -68,6 +68,8 @@ export class Game implements WorldHost {
   private ending = false;
   private last = 0;
   private saveError: string | null = null;
+  /** 프레임 처리 중 예외가 나면 채워지고, 오류 화면을 띄운다 */
+  crash: { message: string; from: 'title' | 'play' } | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.screen = new Screen(canvas);
@@ -85,10 +87,65 @@ export class Game implements WorldHost {
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
       this.last = now;
-      this.frame(dt);
+      this.tick(dt);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+  }
+
+  /**
+   * 프레임 하나를 돌린다. 한 프레임에서 예외가 나도 루프는 끊기지 않고 오류 화면으로 바뀐다.
+   * (예전에는 예외 하나로 requestAnimationFrame 체인이 끊겨 화면이 말없이 멈췄다.)
+   */
+  tick(dt: number): void {
+    try {
+      if (this.crash) this.crashFrame(dt);
+      else this.frame(dt);
+    } catch (e) {
+      this.enterCrash(e);
+    } finally {
+      this.input.endFrame();
+    }
+  }
+
+  private enterCrash(e: unknown): void {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error('[Astraea Vale] 프레임 처리 중 오류', e);
+    this.crash = { message: message || '알 수 없는 오류', from: this.mode };
+    this.ui.clear();
+  }
+
+  /** 오류 화면: 다시 시도(같은 상태로 이어서) 또는 타이틀로 */
+  private crashFrame(dt: number): void {
+    const inp = this.input;
+    inp.poll(dt);
+    const crash = this.crash!;
+    const pads = ['pad0', 'pad1', 'pad2', 'pad3'] as const;
+    const retry = ['Enter', 'KeyE', 'Space'].some((k) => inp.keyPressed(k)) || inp.mouse.leftPressed || pads.some((d) => inp.pressed(d, 'confirm'));
+    const toTitle = inp.keyPressed('Escape') || pads.some((d) => inp.pressed(d, 'cancel'));
+    const sc = this.screen;
+    sc.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    sc.ctx.fillStyle = '#0b0a1a';
+    sc.ctx.fillRect(0, 0, sc.canvas.width, sc.canvas.height);
+    const c = sc.beginUI();
+    panel(c, 40, 34, VW - 80, VH - 68);
+    text(c, '문제가 생겨 게임을 잠시 멈췄어요', VW / 2, 44, { align: 'center', color: UI.gold });
+    const detail = crash.message.length > 140 ? `${crash.message.slice(0, 140)}…` : crash.message;
+    wrap(c, detail, VW - 110, 10).slice(0, 4).forEach((l, i) => text(c, l, VW / 2, 66 + i * 12, { align: 'center', size: 10, color: UI.red }));
+    wrap(c, crash.from === 'play' ? '마지막 저장은 잠자리에 든 시점입니다. 다시 시도하면 지금 상태 그대로 이어서 진행합니다.' : '다시 시도하면 타이틀 화면을 이어서 진행합니다.', VW - 110, 10).forEach((l, i) =>
+      text(c, l, VW / 2, 118 + i * 12, { align: 'center', size: 10, color: UI.dim }),
+    );
+    keyHint(c, VW / 2, VH - 52, '[Enter / 클릭 / A] 다시 시도   ·   [Esc / B] 타이틀로', 'center');
+    if (retry) {
+      this.crash = null;
+    } else if (toTitle) {
+      this.crash = null;
+      this.ui.clear();
+      this.mode = 'title';
+      this.input.kb2Active = false;
+      this.title.refresh();
+      audio.music('title');
+    }
   }
 
   // ── 저장 ─────────────────────────────────────────
@@ -96,7 +153,7 @@ export class Game implements WorldHost {
     const st = storage();
     if (!st) return false;
     const r = loadFrom(st);
-    if (r && !r.ok) this.saveError = r.reason;
+    this.saveError = r && !r.ok ? r.reason : null;
     return !!r && r.ok;
   }
 
@@ -159,7 +216,6 @@ export class Game implements WorldHost {
       this.screen.beginUI();
       this.title.draw(c);
       this.ui.draw(c);
-      inp.endFrame();
       return;
     }
     // 창을 닫은 바로 그 키가 월드 입력(예: Esc → 메뉴)으로 다시 쓰이지 않게, 창이 열려 있던 프레임은 월드를 멈춘다.
@@ -177,7 +233,6 @@ export class Game implements WorldHost {
     const c = this.screen.beginUI();
     drawHud(c, this.state, this.world, this.toasts, this.slotFlash);
     this.ui.draw(c);
-    inp.endFrame();
   }
 
   private titleAction(a: 'new' | 'continue' | 'controls' | 'settings'): void {

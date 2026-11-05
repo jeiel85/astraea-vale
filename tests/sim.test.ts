@@ -348,3 +348,54 @@ describe('룩북 공유 코드', () => {
     expect(decodeLookbook('AV1AAAA')).toBeNull();
   });
 });
+
+describe('저장 심층 검증', () => {
+  const played = () => {
+    const s = newGame(77, '검증');
+    till(s, 13, 14);
+    weaveRune(s, 13, 14, 0, 'orion');
+    plant(s, 13, 14, 'seed_star_pepper');
+    s.animals[0]!.affection = s.animals[1]!.affection = 60;
+    breed(s, s.animals[0]!.id, s.animals[1]!.id, new Rng(5));
+    s.shippingBin.push({ id: 'turnip', n: 3, q: 1 });
+    talk(s, 'lyra', new Rng(1));
+    s.appearance.pattern = new Array(256).fill(-1).map((_, i) => (i % 17 === 0 ? 5 : -1));
+    for (let i = 0; i < 3; i++) advanceDay(s, false);
+    return s;
+  };
+  const corrupt = (mut: (raw: Record<string, any>) => void) => {
+    const raw = JSON.parse(serialize(played()));
+    mut(raw);
+    return deserialize(JSON.stringify(raw));
+  };
+
+  it('실제로 플레이한 상태는 그대로 통과한다', () => {
+    const s = played();
+    const r = deserialize(serialize(s));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.state).toEqual(s);
+  });
+  it.each([
+    ['밭의 알 수 없는 작물', (r: any) => (r.plots['13,14'].crop.id = 'banana'), /작물/],
+    ['밭의 잘못된 룬', (r: any) => (r.plots['13,14'].rune = 'dragon'), /룬/],
+    ['밭 좌표 형식', (r: any) => (r.plots['x,1'] = { watered: false, crop: null, rune: null }), /좌표/],
+    ['음수 성장', (r: any) => (r.plots['13,14'].crop.growth = -1), /작물 상태/],
+    ['겹치는 가축 번호', (r: any) => (r.animals[1].id = r.animals[0].id), /겹칩니다/],
+    ['알 수 없는 변종', (r: any) => (r.animals[0].variant = 'rainbow'), /변종/],
+    ['범위를 벗어난 애정', (r: any) => (r.animals[0].affection = 999), /수치/],
+    ['다음 가축 번호 역전', (r: any) => (r.nextAnimalId = 1), /다음 가축 번호/],
+    ['주민 이벤트 범위', (r: any) => (r.npcs.lyra.eventsSeen = [7]), /이벤트/],
+    ['가방 묶음 초과', (r: any) => (r.inventory[0] = { id: 'hoe', n: 2, q: 0 }), /개수나 품질/],
+    ['잘못된 품질', (r: any) => (r.shippingBin = [{ id: 'turnip', n: 1, q: 3 }]), /출하함/],
+    ['시각 범위', (r: any) => (r.minutes = 30), /시각/],
+    ['골드 손상(NaN→null)', (r: any) => (r.gold = null), /골드/],
+    ['무늬 길이', (r: any) => (r.appearance.pattern = [1, 2, 3]), /무늬/],
+    ['외형 색', (r: any) => (r.appearance.hair = 'red'), /외형/],
+    ['광산 체크포인트', (r: any) => (r.mine.checkpoint = 0), /광산/],
+    ['알 수 없는 목표', (r: any) => (r.goals.cheat = true), /목표/],
+  ])('%s → 이유와 함께 거부', (_name, mut, re) => {
+    const r = corrupt(mut);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toMatch(re);
+  });
+});

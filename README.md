@@ -8,7 +8,7 @@
 
 <a href="https://jeiel85.github.io/astraea-vale/"><img src="https://img.shields.io/badge/%E2%96%B6%20%EC%A7%80%EA%B8%88%20%ED%94%8C%EB%A0%88%EC%9D%B4-PLAY%20NOW-ffe27a?style=for-the-badge&labelColor=3a2060" alt="지금 플레이"></a>
 
-<img src="https://img.shields.io/badge/version-0.1.0-c8a8ff?style=flat-square" alt="version">
+<img src="https://img.shields.io/badge/version-0.1.1-c8a8ff?style=flat-square" alt="version">
 <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
 <img src="https://img.shields.io/badge/Canvas%202D-no%20engine-ff8ab8?style=flat-square" alt="Canvas 2D">
 <img src="https://img.shields.io/badge/Vite-8-646cff?style=flat-square&logo=vite&logoColor=white" alt="Vite">

@@ -388,9 +388,11 @@ export class World {
       this.fade += this.fadeDir * dt * 4;
       if (this.fadeDir > 0 && this.fade >= 1) {
         this.fade = 1;
-        this.fadeMid?.();
+        // 콜백을 먼저 떼어 낸 뒤 실행한다: 콜백이 예외를 던져도 다음 프레임에 다시 실행되지 않고 페이드인은 계속된다.
+        const mid = this.fadeMid;
         this.fadeMid = null;
         this.fadeDir = -1;
+        mid?.();
       } else if (this.fadeDir < 0 && this.fade <= 0) {
         this.fade = 0;
         this.fadeDir = 0;

@@ -103,6 +103,6 @@ export class TitleScreen {
       const err = this.saveError();
       if (err) text(c, err, VW / 2, 120, { size: 10, align: 'center', color: UI.red });
     }
-    keyHint(c, VW - 4, VH - 12, 'v0.1 · 코드 MIT · 콘텐츠 CC BY 4.0', 'right');
+    keyHint(c, VW - 4, VH - 12, `v${__APP_VERSION__} · 코드 MIT · 콘텐츠 CC BY 4.0`, 'right');
   }
 }
